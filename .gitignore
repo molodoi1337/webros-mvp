@@ -1,0 +1,58 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ============================================
+# Backend (ROS2 workspace)
+# ============================================
+
+# ROS2 colcon build artifacts
+backend/install/
+backend/log/
+backend/build/
+
+# ROS2 Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ROS2 IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ROS2 compiled messages
+*.msg.py
+*.srv.py
+*.action.py
+
+# ROS2 generated files
+*.hpp
+*.cpp
+*.msg.hpp
+*.srv.hpp
+*.action.hpp
+
+# ============================================
+# General
+# ============================================
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# misc
+*.pem
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Python virtual environments
+venv/
+frontend/venv/

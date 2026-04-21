@@ -1,0 +1,858 @@
+#speed-menu {
+    position: fixed;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    padding: 10px 20px;
+    /* На больших экранах меню компактное, на маленьких — не шире экрана */
+    width: min(480px, 94vw);
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 10px;
+    backdrop-filter: blur(3px);
+    color: #ffff00;
+    z-index: 4000;
+    display: none;
+    border: 3px solid rgba(255,255,255,.25);
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+    font-weight: bold;
+    max-height: calc(100dvh - 24px);
+    max-height: calc(100vh - 24px); /* fallback */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+.tab-buttons {
+    touch-action: pan-x;
+}
+
+.speed-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.tab-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: stretch;
+    background: rgba(255, 255, 0, 0.1);
+    border-radius: 5px;
+    padding: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.tab-buttons::-webkit-scrollbar {
+    height: 6px;
+}
+
+.tab-buttons::-webkit-scrollbar-track {
+    background: rgba(255, 255, 0, 0.08);
+    border-radius: 3px;
+}
+
+.tab-buttons::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 0, 0.35);
+    border-radius: 3px;
+}
+
+.tab-buttons::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 0, 0.5);
+}
+
+.tab-btn {
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: #ffff00;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    font-weight: bold;
+    /* Фиксированная ширина по контенту, не сжимать — скролл при нехватке места, без наезда текста */
+    flex: 0 0 auto;
+    min-width: 5em;
+    max-width: none;
+    text-align: center;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    box-sizing: border-box;
+}
+
+.tab-btn.active {
+    background: rgba(255, 255, 0, 0.2);
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 0, 0.15);
+}
+
+#speed-menu .menu-close-btn {
+    position: static;
+    flex-shrink: 0;
+    background: rgba(255, 255, 0, 0.1);
+    border: none;
+    color: #ffff00;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+#speed-menu .menu-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.limits-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
+}
+
+.limits-grid-header {
+    font-size: 12px;
+    text-transform: uppercase;
+    opacity: 0.5;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 0, 0.15);
+}
+
+.limits-grid-label {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.limits-grid input[type="range"] {
+    width: 100%;
+    min-width: 80px;
+}
+
+.limits-grid-value {
+    text-align: right;
+    font-size: 13px;
+    min-width: 65px;
+    font-variant-numeric: tabular-nums;
+}
+
+#speed-menu .limits-profile-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 0, 0.08);
+    border: 1px solid rgba(255, 255, 0, 0.25);
+}
+
+#speed-menu .limits-profile-label {
+    font-size: 13px;
+    color: #ffff00;
+    margin-right: 6px;
+    white-space: nowrap;
+}
+
+#speed-menu .profile-btn {
+    min-width: 0;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 0, 0.4);
+    background: rgba(255, 255, 0, 0.1);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    flex: 1 1 0;
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.07s ease, box-shadow 0.15s ease;
+}
+
+#speed-menu .profile-btn:hover {
+    background: rgba(255, 255, 0, 0.2);
+    border-color: rgba(255, 255, 0, 0.6);
+}
+
+#speed-menu .profile-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) inset;
+}
+
+#speed-menu .profile-btn.active {
+    background: rgba(255, 255, 0, 0.35);
+    border-color: rgba(255, 255, 0, 0.9);
+    color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 0, 0.9);
+}
+
+.platform-mobile #speed-menu .limits-profile-selector {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.switches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.switch-control {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+}
+
+/* Скрываем стандартный чекбокс, используем кастомный переключатель */
+.switch-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.switch-label {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    padding-right: 56px;
+    color: #ffff00;
+}
+
+/* Трек переключателя */
+.switch-label::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Ползунок */
+.switch-label::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e7e7e7;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+    transition: right 0.18s ease, background 0.18s ease;
+}
+
+/* Активное состояние */
+.switch-checkbox:checked + .switch-label::after {
+    background: rgba(190, 255, 0, 0.25);
+    border-color: rgba(190, 255, 0, 0.9);
+}
+
+.switch-checkbox:checked + .switch-label::before {
+    right: 4px;
+    background: #f6ff9f;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #f0f0f0;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    background: #f0f0f0;
+}
+
+/* Video tab */
+.video-source-group {
+    margin-bottom: 15px;
+}
+
+/* Основное tab */
+.general-field-group {
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.general-field-group label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.general-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 0, 0.3);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffff00;
+    font-size: 14px;
+    font-family: monospace;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+}
+
+.general-input::-webkit-inner-spin-button,
+.general-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.general-input:focus {
+    border-color: rgba(255, 255, 0, 0.6);
+}
+
+.general-input::placeholder {
+    color: rgba(255, 255, 0, 0.3);
+}
+
+.general-field-title {
+    font-size: 14px;
+    margin-bottom: 4px;
+    margin-top: 8px;
+    opacity: 0.8;
+}
+
+.vehicle-radio-option {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+}
+
+.vehicle-radio-option input[type="radio"] {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    accent-color: #ffff00;
+    cursor: pointer;
+}
+
+.video-source-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+.video-radio-option {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.video-radio-option input[type="radio"] {
+    margin-right: 10px;
+    width: 16px;
+    height: 16px;
+    accent-color: #ffff00;
+    cursor: pointer;
+}
+
+.video-radio-option label {
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+}
+
+.video-topic-group {
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.video-topic-group label {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.video-topic-input,
+.video-topic-select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 0, 0.3);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffff00;
+    font-size: 13px;
+    font-family: monospace;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.video-topic-select option {
+    background: #1a1a1a;
+    color: #ffff00;
+}
+
+.video-topic-input:focus,
+.video-topic-select:focus {
+    border-color: rgba(255, 255, 0, 0.6);
+}
+
+.video-topic-input::placeholder {
+    color: rgba(255, 255, 0, 0.3);
+}
+
+.video-apply-btn {
+    width: 100%;
+    padding: 8px 0;
+    margin-top: 10px;
+    border: 1px solid rgba(255, 255, 0, 0.4);
+    border-radius: 5px;
+    background: rgba(255, 255, 0, 0.15);
+    color: #ffff00;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.video-apply-btn:hover {
+    background: rgba(255, 255, 0, 0.25);
+}
+
+.video-apply-btn:active {
+    background: rgba(255, 255, 0, 0.35);
+}
+
+.video-source-status {
+    margin-top: 12px;
+    font-size: 12px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+#app-toast-container {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.speed-menu-toast {
+    min-width: 180px;
+    max-width: 320px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 0, 0.7);
+    border: 1px solid rgba(255, 255, 0, 0.35);
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.9);
+    opacity: 0;
+    text-align: center;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: auto;
+}
+
+.speed-menu-toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.speed-menu-toast.photo-success-toast {
+    background: rgba(30, 120, 40, 0.95);
+    border-color: rgba(120, 255, 160, 0.95);
+    box-shadow: 0 4px 10px rgba(0, 255, 128, 0.7);
+}
+
+/* Управление — грид привязок интерфейсных кнопок */
+.control-profiles-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.control-bindings-title {
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.control-bindings-description {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.control-profiles-select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 0, 0.3);
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffff00;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.control-profile-apply-btn,
+.control-bindings-save-btn {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 0, 0.4);
+    background: rgba(255, 255, 0, 0.15);
+    color: #ffff00;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.control-profile-apply-btn:hover,
+.control-bindings-save-btn:hover {
+    background: rgba(255, 255, 0, 0.25);
+}
+
+.control-profile-info {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 6px;
+}
+
+.control-bindings-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.1fr 1.4fr;
+    gap: 8px 12px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+/* Грид привязки движения робота — только Действие + Клавиша */
+.movement-bindings-grid {
+    grid-template-columns: 2fr 1.1fr 1.4fr;
+}
+
+/* Грид привязки осей джойстика — Ось джойстика + Действие робота */
+.joystick-axes-grid {
+    grid-template-columns: 2fr 1.6fr;
+}
+
+.binding-header-cell {
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.binding-row {
+    display: contents;
+}
+
+.binding-cell {
+    padding: 4px 0;
+}
+
+.binding-key-input,
+.movement-key-input,
+.binding-joy-select,
+.movement-joy-select,
+.joystick-axis-select,
+.control-param-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 0, 0.35);
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffff00;
+    font-size: 13px;
+    font-family: monospace;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.binding-key-input:focus,
+.movement-key-input:focus,
+.binding-joy-select:focus,
+.movement-joy-select:focus,
+.joystick-axis-select:focus,
+.control-param-input:focus {
+    border-color: rgba(255, 255, 0, 0.8);
+    box-shadow: 0 0 0 1px rgba(255, 255, 0, 0.4);
+    background: rgba(0, 0, 0, 0.85);
+}
+
+/* Скрываем стрелки у числовых инпутов параметров управления */
+.control-param-input::-webkit-inner-spin-button,
+.control-param-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.control-param-input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.binding-key-input::placeholder,
+.movement-key-input::placeholder {
+    color: rgba(255, 255, 0, 0.4);
+}
+
+/* Мобильная версия — динамическая адаптация под телефоны */
+.platform-mobile #speed-menu {
+    width: 60vw;
+    max-height: calc(100dvh - 24px);
+    max-height: calc(100vh - 24px); /* fallback */
+    padding: 16px 12px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.platform-mobile .speed-menu-header {
+    margin-bottom: 16px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.platform-mobile .tab-buttons {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.platform-mobile #speed-menu .menu-close-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.platform-mobile .tab-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: normal;
+    word-break: break-word;
+    min-height: 44px;
+}
+
+.platform-mobile .tab-content-container {
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.platform-mobile .limits-grid {
+    gap: 10px 8px;
+}
+
+.platform-mobile .limits-grid-label {
+    font-size: 13px;
+}
+
+.platform-mobile .limits-grid-value {
+    font-size: 13px;
+    min-width: 58px;
+}
+
+.platform-mobile .limits-grid input[type="range"] {
+    min-width: 60px;
+}
+
+.platform-mobile .switches-container {
+    gap: 14px;
+}
+
+.platform-mobile .switch-control {
+    padding: 12px 0;
+    min-height: 44px;
+}
+
+.platform-mobile .switch-label {
+    font-size: 15px;
+}
+
+.platform-mobile .switch-checkbox {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+}
+
+.platform-mobile .video-radio-option {
+    min-height: 44px;
+    padding: 8px 0;
+}
+
+.platform-mobile .video-radio-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+}
+
+.platform-mobile .video-radio-option label {
+    font-size: 15px;
+}
+
+.platform-mobile .video-topic-input,
+.platform-mobile .video-topic-select {
+    font-size: 16px;
+    padding: 12px 14px;
+    min-height: 48px;
+    box-sizing: border-box;
+}
+
+.platform-mobile .video-apply-btn {
+    padding: 14px 0;
+    font-size: 16px;
+    min-height: 48px;
+}
+
+/* Узкие экраны (маленькие телефоны) */
+@media (max-width: 480px) {
+    .platform-mobile #speed-menu {
+        width: calc(100vw - 16px);
+        padding: 12px 10px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 12px;
+    }
+
+    .platform-mobile .speed-menu-header {
+        margin-bottom: 12px;
+        gap: 8px;
+    }
+
+    .platform-mobile .tab-buttons {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .platform-mobile .tab-btn {
+        flex: 1 1 calc(33.333% - 4px);
+        min-width: 0;
+        padding: 10px 6px;
+        font-size: 12px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .platform-mobile #speed-menu .menu-close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    .platform-mobile .limits-grid {
+        grid-template-columns: 1fr 1.2fr auto;
+        gap: 8px 6px;
+    }
+
+    .platform-mobile .limits-grid-header {
+        font-size: 11px;
+    }
+
+    .platform-mobile .limits-grid-label {
+        font-size: 12px;
+    }
+
+    .platform-mobile .limits-grid-value {
+        font-size: 12px;
+        min-width: 52px;
+    }
+
+    .platform-mobile .video-topic-input,
+    .platform-mobile .video-topic-select {
+        font-size: 15px;
+        padding: 10px 12px;
+    }
+}
+
+/* Очень узкие экраны (портрет и маленькие устройства) */
+@media (max-width: 360px) {
+    .platform-mobile #speed-menu {
+        width: calc(100vw - 12px);
+        padding: 10px 8px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        bottom: 6px;
+    }
+
+    .platform-mobile .tab-btn {
+        font-size: 11px;
+        padding: 8px 4px;
+        white-space: normal;
+        word-break: break-word;
+    }
+}

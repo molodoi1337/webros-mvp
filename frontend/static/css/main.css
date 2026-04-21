@@ -1,0 +1,540 @@
+*:focus {
+    outline: none;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    position: relative;
+    min-height: 100vh;
+    background: black;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    background-size: contain;
+    background-position: right center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    z-index: -1;
+    user-select: none;
+}
+
+body,html {
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    user-select: none;
+}
+
+*,
+*::before,
+*::after {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+/* ================== Глобальные стили скроллбара ================== */
+/* Firefox */
+* {
+    scrollbar-width: thin; /* тонкий скроллбар */
+    scrollbar-color: rgba(255, 255, 0, 1.0) transparent; /* ползунок | трек */
+}
+
+/* WebKit-браузеры (Chrome, Edge, Safari, Opera) */
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 0, 0.5); /* полупрозрачный жёлтый */
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 0, 0.7);
+}
+
+#grid {
+  display: grid;
+  /* Новый расчёт размера ячейки с учётом:
+     - 100vh (полная высота viewport)
+     - 16px padding (8px сверху и снизу)*/
+  --cell-size: calc((100vh - 32px - 13 * 15px) / 14); /* 11 gaps × 4px = 44px */
+  
+  grid-template-rows: repeat(14, var(--cell-size));
+  grid-template-columns: repeat(auto-fill, var(--cell-size));
+  
+  width: 100%;
+  height: calc(100vh - 32px);
+  gap: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+  
+  /* Чтобы сетка заполняла всю доступную ширину */
+  justify-content: space-between;
+}
+
+#grid:hover {background:transparent;}
+
+
+.joystick-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.joystick-wrapper,
+.grid-button,
+.joystick-head {
+    touch-action: none;
+}
+
+.joystick-head {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.4) 80%,
+        rgba(255, 255, 255, 0.1) 70%,
+        rgba(255, 255, 255, 0.0) 0%
+    );
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.grid-item {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.grid-item-interactive {
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+        0 0 0px 2px rgba(255, 255, 255, 0.01),
+        inset 0 0 0px 2px rgba(255, 255, 255, 0.015);
+    cursor: pointer;
+}
+.grid-item,
+.grid-item-interactive {
+   user-select: none;
+   -webkit-user-select: none;
+   outline: none;
+   container-type:inline-size;
+
+}
+.grid-item-interactive:focus,
+.grid-item-interactive:focus-visible {
+  outline: none;
+}
+
+.grid-item-interactive,
+.connection-form,
+.menu-close-btn
+{
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.platform-mobile .grid-item {
+  padding: 0;
+}
+
+.grid-item:hover {
+  background-color: transparent;
+  z-index: 100;
+}
+
+.draggable {
+  cursor: move;
+}
+
+.connection-form {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+    z-index: 600;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, .25);
+    backdrop-filter: blur(3px);
+}
+
+.connection-settings {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    transform: none;
+    z-index: 601;
+    display: block;
+    pointer-events: none;
+}
+
+.connection-settings-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+        0 0 0px 2px rgba(0, 0, 0, 0.015),
+        inset 0 0 0px 2px rgba(0, 0, 0, 0.015);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 11px;
+    font-family: Arial, sans-serif;
+    pointer-events: auto;
+}
+
+.connection-settings.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* Мобильная адаптация панели ROSBridge (connection-settings):
+   панель снизу по центру, содержимое выровнено по центру */
+.platform-mobile .connection-settings {
+    top: auto !important;
+    bottom: 12px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(120px, 100vw - 32px);
+}
+
+.platform-mobile .connection-settings-inner {
+    width: 100%;
+    align-items: center;
+    text-align: center;
+}
+
+.platform-mobile .connection-settings-row {
+    justify-content: center;
+    text-align: center;
+}
+
+.platform-mobile .connection-settings-fields {
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    text-align: center;
+    gap: 6px;
+}
+
+.platform-mobile .connection-input {
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
+}
+
+.platform-mobile .connection-input--port {
+    width: 100%;
+}
+
+.connection-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.connection-settings-label {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 1;
+}
+
+.connection-settings-fields {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.connection-input {
+    width: 110px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(6, 20, 40, 0.7);
+    color: #ffffff;
+    text-align: left;
+    font-size: 12px;
+    font-family: monospace;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.connection-input--port {
+    width: 80px;
+}
+
+.connection-input--select {
+    cursor: pointer;
+}
+
+.connection-input--custom {
+    display: none;
+}
+
+.connection-input--custom.active {
+    display: inline-block;
+}
+
+/* Убираем стрелки у числового инпута порта */
+input[type="number"].connection-input--port::-webkit-outer-spin-button,
+input[type="number"].connection-input--port::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"].connection-input--port {
+    -moz-appearance: textfield;
+}
+
+.connection-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.connection-input:focus {
+    border-color: rgba(255, 255, 255, 1);
+}
+
+/* .grid-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  z-index: 100;
+    inset: 0 0 0px 2px rgba(0, 0, 0, 0.015);
+    text-shadow: 0 0px 10px rgba(0, 0, 0, 0.9);
+    transition: all .3s cubic-bezier(0.25, 0.8, 0.25, .1);
+    transition: opacity .35s ease, transform .35s ease;
+  
+} */
+
+.connection-form.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.connection-form.error {
+    background-color: rgba(255, 50, 50, 0.45);
+    border-color: rgba(255, 80, 80, 0.6);
+}
+
+.connection-form.connecting {
+    background-color: rgba(255, 255, 0, 0.35);
+    border-color: rgba(255, 255, 0, 0.8);
+    color: #ffffff;
+}
+
+.drag-mode {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 4px;
+    z-index: 1000;
+    user-select: none; 
+    opacity: 0;
+    border: 1px solid rgba(255, 255, 255, .25);
+    backdrop-filter: blur(3px);
+    box-shadow: 
+        0 0 0px 2px rgba(0, 0, 0, 0.015),
+        inset 0 0 0px 2px rgba(0, 0, 0, 0.015);
+        text-shadow: 0 0px 10px rgba(0, 0, 0, 0.9);
+
+    transition: all 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+#fs-prompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    text-align: center;
+}
+
+#fs-prompt.show {
+    display: flex;
+}
+
+#fs-prompt button {
+    margin-top: 20px;
+    padding: 15px 30px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#orientation-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 3000;
+    padding: 20px;
+    font-size: 1.25rem;
+    line-height: 1.5;
+    backdrop-filter: blur(6px);
+}
+
+#orientation-overlay.show {
+    display: flex;
+}
+
+#video-swipe {
+    position: absolute;
+	top: 0;
+	left: 50%;
+    transform: translateX(-50%);
+	width: calc(100vw - (100vh - 32px - 13 * 15px) / 14 * 10 - 32px - 16px * 10);
+	height: calc(100vh - (100vh - 32px - 13 * 15px) / 14 * 1 - 32px);
+    z-index: 10;
+}
+
+#video,
+#ros-image-canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: -5;
+}
+
+#video {
+	background-image: url("/static/img/SdbBackground.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+#ros-image-canvas {
+	object-fit: contain;
+}
+#message {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+    user-select: none;
+	text-align: center;
+	justify-content: center;
+	font-size: 16px;
+	font-weight: bold;
+	color: white;
+	pointer-events: none;
+	padding: 20px;
+	box-sizing: border-box;
+	text-shadow: 0 0 10px rgb(255, 255, 255);
+}
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+/* ================== Ping indicator ================== */
+#ping-indicator {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 11px;
+    font-family: monospace;
+    z-index: 600;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#ping-indicator.show {
+    display: flex;
+}
+
+.ping-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background-color 0.3s ease;
+}
+
+.ping-dot.online {
+    background-color: #4caf50;
+    box-shadow: 0 0 4px #4caf50;
+}
+
+.ping-dot.offline {
+    background-color: #f44336;
+    box-shadow: 0 0 4px #f44336;
+}
+
+.ping-dot.idle {
+    background-color: #888;
+}
+
+.platform-mobile #ping-indicator {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+}

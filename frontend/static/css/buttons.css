@@ -1,0 +1,170 @@
+.grid-button{
+    display: flex;
+    inset:0;
+    width:100%;height:100%;
+    border:none;border-radius:50%;
+    background:transparent;
+    cursor:pointer;
+    transition:background .15s,transform .1s;
+    padding:0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+}
+.button-with-label{
+    width: 100%;
+    height: 100%;
+}
+
+.grid-button:hover  {background:transparent;}
+.grid-button:focus  {background:transparent;}
+/* .grid-button:active {background:rgba(72, 255, 0, 0.25);transform:scale(.92);} */
+.grid-button.active {background: rgba(61, 255, 0, 0.3);transform:scale(.92);}
+
+.grid-button.pc img {
+    width:50% ;height:50%;
+    object-fit:contain;
+    user-select:none;
+    pointer-events:none;
+}
+
+.grid-button.mobile img {
+    width:70% ;height:70%;
+    object-fit:contain;
+    user-select:none;
+    pointer-events:none;
+}
+
+.grid-button .button-label{
+    color: #ffff00;
+    font-weight: bold;
+    font-size: large;
+}
+
+/* #speed-menu {
+    position: fixed;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    padding: 10px 20px;
+    width: max(20vw);
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 10px;
+    backdrop-filter: blur(3px);
+    color: #fff;
+    z-index: 4000;
+    display: none;
+    border: 3px solid rgba(255,255,255,.25);
+} */
+
+.menu-close-btn{
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(3px);
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+}
+
+.menu-close-btn::before,
+.menu-close-btn::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 60%;
+    height: 2px;
+    background: #fff;
+}
+
+.menu-close-btn::before {transform: rotate(45deg);}
+.menu-close-btn::after  {transform: rotate(-45deg);}
+
+.menu-close-btn:hover  {background: rgba(255,255,255,.0);}
+.menu-close-btn:active {background: rgba(255,255,255,.25); transform: scale(.92);}
+
+.recording-indicator {
+    position: fixed;
+    bottom: 9px;
+    right: 18px;
+    background: rgba(255, 0, 0, 0.6);
+    color: rgb(255, 255, 255);
+    padding: 8px 12px;
+    border-radius: 25px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 10000;
+    display: flex;
+
+    align-items: center;
+    gap: 6px; 
+}
+
+.recording-indicator::before {
+    content: '●';
+    color: white;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.arm-indicator {
+    position: fixed;
+    bottom: 9px;
+    right: 18px;
+    padding: 8px 14px;
+    border-radius: 25px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 10000;
+    transition: background .25s, color .25s;
+    user-select: none;
+}
+
+.platform-mobile .arm-indicator,
+.platform-steamdeck .arm-indicator {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.arm-indicator.disarmed {
+    background: rgba(255, 60, 60, 0.6);
+    color: #fff;
+}
+
+.arm-indicator.armed {
+    background: rgba(29, 187, 24, 0.6);
+    color: #fff;
+}
+
+.arm-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset 0 0 120px 40px rgba(255, 200, 0, 0.45);
+    transition: opacity .3s;
+    opacity: 0;
+}
+
+.ping-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset 0 0 120px 40px rgba(255, 30, 30, 0.5);
+    transition: opacity .3s;
+    opacity: 0;
+}

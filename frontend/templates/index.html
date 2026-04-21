@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-orientations" content="portrait,landscape">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+
+<link rel="icon" href="/static/img/sdb.ico" type="image/x-icon">
+
+<link rel="stylesheet" href="/static/css/main.css">
+<link rel="stylesheet" href="/static/css/side-menu.css">
+<link rel="stylesheet" href="/static/css/position.css">
+<!-- <link rel="stylesheet" href="/static/css/compass.css"> -->
+<link rel="stylesheet" href="/static/css/buttons.css">
+<link rel="stylesheet" href="/static/css/bag.css">
+
+<meta charset="UTF-8">
+<title>WebOS</title>
+<script src="/static/js/minJs/roslib.min.js"></script>
+<script src="/static/js/minJs/nipplejs.min.js"></script>
+<script src="/static/js/minJs/js-yaml.min.js"></script>
+<script src="/static/js/minJs/hammer.min.js"></script>
+<script src="/static/js/minJs/chart.min.js"></script>
+<script src="/static/js/minJs/chartjs-plugin-zoom.min.js"></script>
+
+<script defer src="/static/js/mediaMTXReader.js"></script>
+<script defer src="/static/js/rosImageReader.js"></script>
+</head>
+<body>
+<div class="video_wrapper">
+  <video id="video" controls autoplay playsinline></video>
+  <div id="video-swipe"></div>
+</div>
+<div id="message"></div>
+
+<!-- Индикатор пинга устройства -->
+<div id="ping-indicator">
+    <span id="ping-dot" class="ping-dot idle"></span>
+    <span id="ping-text">...</span>
+</div>
+
+<!-- Грид сетка, по которой распологаются элементы -->
+<div id="grid"></div>
+
+<!-- Курс аппарата -->
+<!-- <div class="compass-box">
+    <div class="arrow"></div>
+    <div class="heading"><span id="hd">0</span>°</div>
+    <div class="scale" id="scale"></div>
+</div> -->
+
+<!-- Настройки ROSBridge -->
+<div class="connection-settings">
+    <div class="connection-settings-inner">
+        <div class="connection-settings-row">
+            <span class="connection-settings-label">ROSBridge</span>
+        </div>
+        <div class="connection-settings-fields">
+            <select
+                id="rosbridge-host-select"
+                class="connection-input connection-input--select"
+            ></select>
+            <input
+                type="text"
+                id="rosbridge-host-custom"
+                class="connection-input connection-input--custom"
+                placeholder="свой хост"
+            >
+            <input
+                type="hidden"
+                id="rosbridge-host"
+                value="{{ rosbridge_host }}"
+            >
+        </div>
+        <div class="connection-settings-fields">
+            <select
+                id="rosbridge-port-select"
+                class="connection-input connection-input--port connection-input--select"
+            >
+                <option value="9090">9090</option>
+                <option value="9091">9091</option>
+                <option value="custom">свой порт</option>
+            </select>
+            <input
+                type="number"
+                id="rosbridge-port-custom"
+                class="connection-input connection-input--port connection-input--custom"
+                placeholder="свой порт"
+                min="1"
+                max="65535"
+            >
+            <input
+                type="hidden"
+                id="rosbridge-port"
+                value="{{ rosbridge_port }}"
+            >
+        </div>
+    </div>
+</div>
+
+<!-- Кнопка подключения к ROS (нужна для отладки) -->
+<button class="connection-form" id="connection-form" onclick="connectToROS()">Connect to ROS</button>
+
+<!-- Дополнительная реалиция перехода сайта в режим fullscreen, если не сработал автоматический переход -->
+<div id="fs-prompt">
+    Нажмите, чтобы открыть страницу на весь экран
+    <button>Полноэкранный&nbsp;режим</button>
+</div>
+
+<!-- Если устройсво находится в портретном режиме, то перед пользователем вылезает данное сообщение -->
+<div id="orientation-overlay">
+    Пожалуйста, поверните устройство в альбомную ориентацию
+</div>
+
+<!-- Меню настройки скорости аппарата по linear, angular -->
+<!-- <div id="speed-menu">
+    <div class="speed-menu-header">Speed Limits</div>
+    <button id="speed-menu-close" class="menu-close-btn" aria-label="Close"></button>
+
+    <div class="limit-control">
+        <label for="linear-limit">Linear (m/s):</label>
+        <input type="range" id="linear-limit" min="0.1" max="2.0" step="0.1" value="1.0" />
+        <span id="linear-limit-value">1.0</span>
+    </div>
+
+    <div class="limit-control">
+        <label for="angular-limit">Angular (rad/s):</label>
+        <input type="range" id="angular-limit" min="0.1" max="2.0" step="0.1" value="1.0" />
+        <span id="angular-limit-value">1.0</span>
+    </div>
+</div> -->
+
+<script>
+  const ROSBRIDGE_HOST = "{{ rosbridge_host }}";
+  const ROSBRIDGE_PORT = "{{ rosbridge_port }}";
+</script>
+<script src="/static/js/main.js"></script>
+<script src="/static/js/side-menu.js"></script>
+<!-- <script src="/static/js/compass.js"></script> -->
+<script src="/static/js/position.js"></script>
+<script src="/static/js/videoReader.js"></script>
+<script src="/static/js/pingMonitor.js"></script>
+<script src="/static/js/rosJs.js"></script>
+<script src="/static/js/buttons.js"></script>
+<script src="/static/js/keyboardController.js"></script>
+<script src="/static/js/joyController.js"></script>
+<script src="/static/js/swipe.js"></script>
+<script src="/static/js/bagCatalog.js"></script>
+<script src="/static/js/bagTimeline.js"></script>
+<script src="/static/js/bagViewer.js"></script>
+<script src="/static/js/bagPlayer.js"></script>
+<script src="/static/js/bagManager.js"></script>
+
+</body>
+</html>

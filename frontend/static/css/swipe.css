@@ -1,0 +1,13 @@
+.swipe-feedback {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #4CAF50, #8BC34A);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  z-index: 1000;
+  pointer-events: none;
+}

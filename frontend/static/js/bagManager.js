@@ -192,12 +192,12 @@ class BagManagerClient {
 
   getTopicsPreset(preset) {
     const telemetry = [
-      '/modbus/sensor/heading',
-      '/modbus/sensor/pitch',
-      '/modbus/sensor/depth',
-      '/twist_pilot',
+      '/ws/modbus/sensor/heading',
+      '/ws/modbus/sensor/pitch',
+      '/ws/modbus/sensor/depth',
+      '/ws/twist_pilot',
     ];
-    const camera = ['/camera/image_raw/compressed'];
+    const camera = ['/ws/camera/image_raw/compressed'];
     if (preset === 'telemetry') return telemetry;
     if (preset === 'telemetry_camera') return [...telemetry, ...camera];
     return [];

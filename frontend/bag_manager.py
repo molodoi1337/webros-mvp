@@ -130,8 +130,11 @@ class BagManager:
                 cmd.extend(topics)
             else:
                 cmd.append("-a")
+            record_log = open(str(bag_dir) + "/record.log", "a", buffering=1)
+            record_log.write("CMD: " + " ".join(cmd) + "\n")
+            record_log.flush()
             self.record_process = subprocess.Popen(
-                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid
+                cmd, stdout=record_log, stderr=subprocess.STDOUT, preexec_fn=os.setsid
             )
             self.record_watchdog = BagRecordWatchdog(bag_dir)
             self.record_watchdog.start()

@@ -151,19 +151,38 @@ def stop_record():
         else:
             return _err("BAG_NOT_FOUND", "Запись в БД не найдена", 404)
     info = parser.parse_bag_dir(current["file_path"])
+    message_count = int(info.get("message_count", 0) or 0)
+    duration_ns = int(info.get("duration_ns", 0) or 0)
+    size_bytes = int(info.get("size_bytes", 0) or 0)
+    died_early = bool(current.get("died_early"))
+    empty = message_count == 0 and duration_ns == 0 and size_bytes == 0
+    status = "error" if (died_early or empty) else "active"
     db.update_bag(
         bag_id,
         {
-            "size_bytes": info.get("size_bytes", 0),
-            "duration_ns": info.get("duration_ns", 0),
-            "message_count": info.get("message_count", 0),
+            "size_bytes": size_bytes,
+            "duration_ns": duration_ns,
+            "message_count": message_count,
             "end_time": info.get("end_time"),
-            "status": "active",
+            "status": status,
         },
     )
     db.set_topics(bag_id, info.get("topics", []))
-    db.add_operation("record", bag_id, "completed")
-    return _ok(db.get_bag(bag_id))
+    op_status = "failed" if status == "error" else "completed"
+    err_msg = None
+    if status == "error":
+        err_msg = (
+            f"ros2 bag record finished empty (rc={current.get('returncode')}). "
+            f"Log tail:\n{current.get('log_tail') or ''}"
+        )
+    db.add_operation("record", bag_id, op_status, error_message=err_msg)
+    result = db.get_bag(bag_id)
+    if status == "error":
+        result = dict(result or {})
+        result["record_failed"] = True
+        result["returncode"] = current.get("returncode")
+        result["log_tail"] = current.get("log_tail") or ""
+    return _ok(result)
 
 
 @bag_api.route("/bags/record/status", methods=["GET"])

@@ -124,18 +124,31 @@ class BagManagerClient {
 
   async toggleRecording(wantRecord) {
     if (wantRecord) {
-      const payload = this.getDefaultRecordPayload();
-      const data = await this.request('/api/bags/record/start', { method: 'POST', body: JSON.stringify(payload) });
-      this.isRecording = true;
-      this.currentRecord = data;
-      this.renderStatus();
+      try {
+        const payload = this.getDefaultRecordPayload();
+        const data = await this.request('/api/bags/record/start', { method: 'POST', body: JSON.stringify(payload) });
+        this.isRecording = true;
+        this.currentRecord = data;
+        this.renderStatus();
+      } catch (err) {
+        alert('Не удалось запустить запись:\n' + (err?.message || err));
+        throw err;
+      }
       return;
     }
-    await this.request('/api/bags/record/stop', { method: 'POST', body: '{}' });
+    const data = await this.request('/api/bags/record/stop', { method: 'POST', body: '{}' });
     this.isRecording = false;
     this.currentRecord = null;
     this.renderStatus();
     await this.refreshCatalog({ keepPage: false });
+    if (data && data.record_failed) {
+      alert(
+        'Запись завершилась без данных (size=0, duration=0).\n' +
+        `rc=${data.returncode}\n\n` +
+        'Лог ros2 bag record (хвост):\n' +
+        (data.log_tail || '(пусто)')
+      );
+    }
   }
 
   async syncRecordStatus() {

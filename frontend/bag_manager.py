@@ -1,4 +1,5 @@
 import os
+import shutil
 import signal
 import subprocess
 import threading
@@ -53,11 +54,22 @@ class BagRecordWatchdog:
             self._timer.cancel()
 
 
-MCAP_STORAGE_CONFIG_YAML = """# MCAP storage plugin config
+MCAP_STORAGE_CONFIG_YAML = """# MCAP storage plugin config (Humble rosbag2_storage_mcap).
+# Keep keys conservative: only documented options, no compression to avoid
+# failing on builds that lack the zstd plugin on Jetson.
 chunk_size: 1048576
-compression: zstd
-enable_statistics: true
 """
+
+
+def _tail(path: Path, max_bytes: int = 4096) -> str:
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - max_bytes))
+            return f.read().decode("utf-8", errors="replace")
+    except Exception:
+        return ""
 
 
 class BagManager:
@@ -85,8 +97,9 @@ class BagManager:
 
     def _ensure_storage_config(self) -> Path:
         cfg_path = self.storage_dir / "mcap_storage_config.yaml"
-        if not cfg_path.exists():
-            cfg_path.write_text(MCAP_STORAGE_CONFIG_YAML, encoding="utf-8")
+        # Always (re)write — the embedded yaml is the source of truth; old
+        # installs may have a stale/invalid config from an earlier version.
+        cfg_path.write_text(MCAP_STORAGE_CONFIG_YAML, encoding="utf-8")
         return cfg_path
 
     def start_record(
@@ -107,9 +120,20 @@ class BagManager:
             safe_name = "".join(ch for ch in name if ch.isalnum() or ch in ("-", "_")).strip("_")
             bag_name = safe_name or f"{stamp}_{vehicle_type}"
             bag_dir = self.storage_dir / bag_name
-            bag_dir.mkdir(parents=True, exist_ok=True)
 
+            # ros2 bag record требует несуществующую папку и создаёт её сам.
+            # Если осталась пустая от упавшего запуска — подчищаем. Если с данными — отказываем.
+            if bag_dir.exists():
+                has_data = any(bag_dir.glob("*.mcap")) or any(bag_dir.glob("*.db3"))
+                if has_data:
+                    raise RuntimeError(
+                        f"Папка '{bag_name}' уже существует с данными — выбери другое имя"
+                    )
+                shutil.rmtree(bag_dir)
+
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
             storage_cfg = self._ensure_storage_config()
+            log_path = self.storage_dir / f"{bag_name}.record.log"
 
             cmd = [
                 "ros2",
@@ -130,12 +154,23 @@ class BagManager:
                 cmd.extend(topics)
             else:
                 cmd.append("-a")
-            record_log = open(str(bag_dir) + "/record.log", "a", buffering=1)
+            record_log = open(str(log_path), "a", buffering=1)
             record_log.write("CMD: " + " ".join(cmd) + "\n")
             record_log.flush()
             self.record_process = subprocess.Popen(
                 cmd, stdout=record_log, stderr=subprocess.STDOUT, preexec_fn=os.setsid
             )
+            # Sanity-check: ros2 bag record sometimes exits in <1s on bad
+            # storage config, missing plugin, or bad CLI. Catch it here so
+            # we don't persist a phantom "recording" with no data.
+            time.sleep(0.8)
+            if self.record_process.poll() is not None:
+                rc = self.record_process.returncode
+                self.record_process = None
+                raise RuntimeError(
+                    f"ros2 bag record упал сразу после старта (rc={rc}). "
+                    f"Лог: {log_path}\n----\n{_tail(log_path)}"
+                )
             self.record_watchdog = BagRecordWatchdog(bag_dir)
             self.record_watchdog.start()
             self.current_record = {
@@ -147,32 +182,42 @@ class BagManager:
                 "topics": topics,
                 "start_time": datetime.now().isoformat(),
                 "pid": self.record_process.pid,
+                "log_path": str(log_path),
             }
             return dict(self.current_record)
 
-    def stop_record(self, timeout_sec: int = 10) -> Optional[Dict[str, Any]]:
+    def stop_record(self, timeout_sec: int = 15) -> Optional[Dict[str, Any]]:
         with self._lock:
             proc = self.record_process
-            current = self.current_record
-            if not proc or proc.poll() is not None:
+            current = dict(self.current_record) if self.current_record else None
+            already_dead = bool(proc and proc.poll() is not None)
+            if not proc:
                 self.record_process = None
                 self.current_record = None
                 return current
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGINT)
-            except Exception:
-                proc.terminate()
-            waited = 0.0
-            while proc.poll() is None and waited < timeout_sec:
-                time.sleep(0.2)
-                waited += 0.2
-            if proc.poll() is None:
-                proc.kill()
+            if not already_dead:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGINT)
+                except Exception:
+                    proc.terminate()
+                waited = 0.0
+                while proc.poll() is None and waited < timeout_sec:
+                    time.sleep(0.2)
+                    waited += 0.2
+                if proc.poll() is None:
+                    proc.kill()
+            rc = proc.returncode
             if self.record_watchdog:
                 self.record_watchdog.stop()
                 self.record_watchdog = None
             self.record_process = None
             self.current_record = None
+            if current:
+                current["returncode"] = rc
+                current["died_early"] = already_dead
+                log_path = current.get("log_path")
+                if log_path:
+                    current["log_tail"] = _tail(Path(log_path))
             return current
 
     def get_record_status(self) -> Dict[str, Any]:

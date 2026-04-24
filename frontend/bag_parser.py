@@ -26,8 +26,13 @@ class BagParser:
         info = None
         if metadata_path.exists() and metadata_path.stat().st_size > 0:
             info = self._try_rosbag2_info(path, bag_format)
-            if not info:
-                info = self._try_yaml_metadata(metadata_path)
+            # If rosbag2_py returned nothing OR zeroes (happens when it
+            # can open the bag but can't extract metadata on some Humble
+            # builds), fall back to reading metadata.yaml directly.
+            if not info or not int(info.get("duration_ns") or 0):
+                yaml_info = self._try_yaml_metadata(metadata_path)
+                if yaml_info and int(yaml_info.get("duration_ns") or 0):
+                    info = yaml_info
         if info:
             info["format"] = bag_format
             info["size_bytes"] = size_bytes

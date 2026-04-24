@@ -196,6 +196,7 @@ def record_status():
 def play_bag(bag_id: int):
     db: BagDatabase = _ctx()["db"]
     manager: BagManager = _ctx()["manager"]
+    parser: BagParser = _ctx()["parser"]
     bag = db.get_bag(bag_id)
     if not bag:
         return _err("BAG_NOT_FOUND", f"Запись с id={bag_id} не найдена", 404)
@@ -203,6 +204,25 @@ def play_bag(bag_id: int):
     rate = float(body.get("rate") or 1.0)
     loop = bool(body.get("loop") or False)
     topics = body.get("topics") if isinstance(body.get("topics"), list) else None
+    # Self-heal: if DB has duration_ns=0 (stop_record parse failed or old row),
+    # re-parse the bag directory right now. Without a real duration the player
+    # can't show totals or reset the loop, so users see "0.0s / 0.0s" and
+    # the progress bar never resets.
+    if not int(bag.get("duration_ns") or 0):
+        info = parser.parse_bag_dir(bag["file_path"])
+        if int(info.get("duration_ns") or 0):
+            db.update_bag(
+                bag_id,
+                {
+                    "size_bytes": info.get("size_bytes", 0),
+                    "duration_ns": info.get("duration_ns", 0),
+                    "message_count": info.get("message_count", 0),
+                    "end_time": info.get("end_time"),
+                    "status": "active",
+                },
+            )
+            db.set_topics(bag_id, info.get("topics", []))
+            bag = db.get_bag(bag_id) or bag
     duration_sec = float(int(bag.get("duration_ns") or 0) / 1_000_000_000)
     try:
         result = manager.start_play(

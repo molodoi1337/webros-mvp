@@ -126,6 +126,9 @@ class BagViewer {
       window.location.href = `/api/bags/${bag.id}/download`;
     });
     body.querySelector('#bag-play-btn').addEventListener('click', async () => {
+      // Close the viewer modal first — otherwise it stays on top of the
+      // playback view and blocks interaction (looks like a stuck overlay).
+      this.close();
       if (window.bagPlayer) await window.bagPlayer.play(bag.id);
     });
     body.querySelector('#bag-delete-btn').addEventListener('click', async () => {

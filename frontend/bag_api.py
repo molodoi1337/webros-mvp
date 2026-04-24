@@ -292,13 +292,32 @@ def scan_storage():
     if requested != root and root not in requested.parents:
         return _err("PATH_FORBIDDEN", "Сканирование разрешено только внутри директории хранения", 403)
     imported = 0
+    refreshed = 0
     for child in requested.iterdir():
         if not child.is_dir():
             continue
         has_bag_files = any(child.glob("*.mcap")) or any(child.glob("*.db3"))
         if not has_bag_files:
             continue
-        if db.find_bag_by_path(str(child)):
+        existing = db.find_bag_by_path(str(child))
+        if existing:
+            # Heal DB rows saved by an earlier broken parse (0 duration /
+            # 0 messages): re-parse the bag dir and update metadata in place.
+            if not existing.get("duration_ns") or not existing.get("message_count"):
+                info = parser.parse_bag_dir(str(child))
+                if info.get("duration_ns") or info.get("message_count"):
+                    db.update_bag(
+                        int(existing["id"]),
+                        {
+                            "size_bytes": info.get("size_bytes", 0),
+                            "duration_ns": info.get("duration_ns", 0),
+                            "message_count": info.get("message_count", 0),
+                            "end_time": info.get("end_time"),
+                            "status": "active",
+                        },
+                    )
+                    db.set_topics(int(existing["id"]), info.get("topics", []))
+                    refreshed += 1
             continue
         info = parser.parse_bag_dir(str(child))
         bag_id = db.create_bag(
@@ -319,7 +338,7 @@ def scan_storage():
         )
         db.set_topics(bag_id, info.get("topics", []))
         imported += 1
-    return _ok({"imported": imported})
+    return _ok({"imported": imported, "refreshed": refreshed})
 
 
 # ------------------ INSPECTOR / TIMELINE / CHART ------------------

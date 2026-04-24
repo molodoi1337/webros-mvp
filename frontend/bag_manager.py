@@ -356,8 +356,14 @@ class BagManager:
                 wall_elapsed = max(0.0, time.monotonic() - float(started_at) - paused_total)
             elapsed_sec = wall_elapsed * float(state.get("rate") or 1.0)
             duration = float(state.get("duration_sec") or 0.0)
-            if duration > 0 and not state.get("loop"):
-                elapsed_sec = min(elapsed_sec, duration)
+            if duration > 0:
+                if state.get("loop"):
+                    # rosbag2 --loop restarts playback from t=0; show the
+                    # current-iteration progress, not the total wall time,
+                    # otherwise the progress bar keeps growing past 100%.
+                    elapsed_sec = elapsed_sec % duration
+                else:
+                    elapsed_sec = min(elapsed_sec, duration)
             return {
                 "playing": True,
                 "paused": bool(state.get("paused")),

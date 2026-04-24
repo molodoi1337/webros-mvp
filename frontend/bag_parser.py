@@ -19,11 +19,15 @@ class BagParser:
         size_bytes = sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
         # Avoid noisy rosbag2 errors on incomplete/crashed directories.
-        # If metadata is absent, keep best-effort fallback.
+        # Primary: rosbag2_py (authoritative). Fallback: parse metadata.yaml
+        # directly — rosbag2_py is not guaranteed to be importable from the
+        # Flask venv on Jetson, and metadata.yaml carries the same numbers.
         metadata_path = path / "metadata.yaml"
         info = None
         if metadata_path.exists() and metadata_path.stat().st_size > 0:
             info = self._try_rosbag2_info(path, bag_format)
+            if not info:
+                info = self._try_yaml_metadata(metadata_path)
         if info:
             info["format"] = bag_format
             info["size_bytes"] = size_bytes
@@ -38,6 +42,43 @@ class BagParser:
             "start_time": now_iso,
             "end_time": None,
             "topics": [],
+        }
+
+    def _try_yaml_metadata(self, metadata_path: Path) -> Dict[str, Any] | None:
+        try:
+            import yaml  # type: ignore
+        except Exception:
+            return None
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except Exception:
+            return None
+        root = data.get("rosbag2_bagfile_information") or data
+        duration_ns = int((root.get("duration") or {}).get("nanoseconds") or 0)
+        start_ns = int((root.get("starting_time") or {}).get("nanoseconds_since_epoch") or 0)
+        message_count = int(root.get("message_count") or 0)
+        duration_sec = duration_ns / 1_000_000_000 if duration_ns > 0 else 0.0
+        topics: List[Dict[str, Any]] = []
+        for entry in root.get("topics_with_message_count") or []:
+            meta = entry.get("topic_metadata") or {}
+            count = int(entry.get("message_count") or 0)
+            freq = round(count / duration_sec, 3) if duration_sec > 0 else None
+            topics.append(
+                {
+                    "topic_name": meta.get("name"),
+                    "message_type": meta.get("type", "unknown"),
+                    "message_count": count,
+                    "frequency_hz": freq,
+                }
+            )
+        end_ns = start_ns + duration_ns if duration_ns > 0 else start_ns
+        return {
+            "duration_ns": duration_ns,
+            "message_count": message_count,
+            "start_time": _iso_from_ns(start_ns) if start_ns > 0 else datetime.now(tz=timezone.utc).isoformat(),
+            "end_time": _iso_from_ns(end_ns) if end_ns > 0 else None,
+            "topics": topics,
         }
 
     def _try_rosbag2_info(self, bag_dir: Path, bag_format: str) -> Dict[str, Any] | None:

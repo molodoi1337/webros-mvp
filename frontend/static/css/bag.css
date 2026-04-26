@@ -45,6 +45,16 @@
   font-weight: bold;
 }
 
+.bag-panel-toolbar button.recording {
+  background: #c62828;
+  border-color: #ff5252;
+  color: #fff;
+}
+
+.bag-panel-toolbar button.recording:hover {
+  background: #b71c1c;
+}
+
 .bag-storage-info {
   margin-top: 6px;
   font-size: 12px;

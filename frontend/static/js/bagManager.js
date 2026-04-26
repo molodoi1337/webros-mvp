@@ -69,7 +69,13 @@ class BagManagerClient {
       await this.request('/api/bags/scan', { method: 'POST', body: '{}' });
       await this.refreshCatalog({ keepPage: false });
     });
-    panel.querySelector('#bag-open-record-dialog-btn').addEventListener('click', () => this.openRecordDialog());
+    panel.querySelector('#bag-open-record-dialog-btn').addEventListener('click', () => {
+      if (this.isRecording) {
+        this.stopRecordingFromPanel();
+      } else {
+        this.openRecordDialog();
+      }
+    });
     ['bag-search', 'bag-status-filter', 'bag-tags-filter', 'bag-from-filter', 'bag-to-filter', 'bag-sort-filter'].forEach((id) => {
       const el = panel.querySelector(`#${id}`);
       if (!el) return;
@@ -168,6 +174,29 @@ class BagManagerClient {
       this.statusEl.textContent = 'BAG: idle';
       this.statusEl.classList.remove('recording');
     }
+    const toolbarBtn = document.getElementById('bag-open-record-dialog-btn');
+    if (toolbarBtn) {
+      if (this.isRecording) {
+        toolbarBtn.textContent = 'Остановить';
+        toolbarBtn.classList.add('recording');
+      } else {
+        toolbarBtn.textContent = 'Запись';
+        toolbarBtn.classList.remove('recording');
+      }
+    }
+  }
+
+  async stopRecordingFromPanel() {
+    if (!confirm('Остановить запись?')) return;
+    try {
+      await this.toggleRecording(false);
+    } catch (err) {
+      alert('Не удалось остановить запись:\n' + (err?.message || err));
+      return;
+    }
+    if (typeof window.updateButtonState === 'function') {
+      window.updateButtonState('bag_record', false);
+    }
   }
 
   async refreshCatalog({ keepPage = true } = {}) {
@@ -217,6 +246,10 @@ class BagManagerClient {
   }
 
   async openRecordDialog() {
+    if (this.isRecording) {
+      alert('Запись уже идёт. Остановите её перед запуском новой.');
+      return;
+    }
     const topics = await this.fetchRosTopics();
     const allNames = topics.map((t) => t.name);
     const current = this.getDefaultRecordPayload();

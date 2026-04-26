@@ -663,6 +663,8 @@ const updateButtonState = (name, isActive) => {
   btn.dataset.active = String(isActive);
 };
 
+window.updateButtonState = updateButtonState;
+
 window.addEventListener('buttonclick', createHandler(clickActions));
 window.addEventListener('buttontoggle', createHandler(toggleActions));
 window.addEventListener('buttonpress', createHandler(pressActions));

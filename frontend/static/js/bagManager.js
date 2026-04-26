@@ -167,9 +167,19 @@ class BagManagerClient {
   renderStatus() {
     if (!this.statusEl) return;
     if (this.isRecording) {
-      const label = this.currentRecord?.name || 'recording';
-      this.statusEl.textContent = `BAG REC: ${label}`;
+      const rawLabel = this.currentRecord?.name || 'recording';
+      const label = String(rawLabel).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+      this.statusEl.innerHTML = `
+        <span class="bag-status-text">BAG REC: ${label}</span>
+        <button id="bag-status-stop-btn" type="button" class="bag-stop-btn">■ Остановить запись</button>
+      `;
       this.statusEl.classList.add('recording');
+      const stopBtn = this.statusEl.querySelector('#bag-status-stop-btn');
+      if (stopBtn) {
+        stopBtn.addEventListener('click', () => this.stopRecordingFromPanel());
+      }
     } else {
       this.statusEl.textContent = 'BAG: idle';
       this.statusEl.classList.remove('recording');
@@ -183,6 +193,9 @@ class BagManagerClient {
         toolbarBtn.textContent = 'Запись';
         toolbarBtn.classList.remove('recording');
       }
+    }
+    if (typeof window.updateButtonState === 'function') {
+      window.updateButtonState('bag_record', this.isRecording);
     }
   }
 

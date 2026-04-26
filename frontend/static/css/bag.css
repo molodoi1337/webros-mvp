@@ -43,6 +43,32 @@
 .bag-status.recording {
   color: #ff4d4d;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bag-status .bag-status-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.bag-status .bag-stop-btn {
+  flex: 0 0 auto;
+  background: #c62828;
+  border: 1px solid #ff5252;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.bag-status .bag-stop-btn:hover {
+  background: #b71c1c;
 }
 
 .bag-panel-toolbar button.recording {

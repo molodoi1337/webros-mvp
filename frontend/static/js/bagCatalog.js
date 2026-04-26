@@ -21,10 +21,14 @@ class BagCatalog {
     }
     const sorted = [...items].sort((a, b) => this.compare(a, b));
     const rows = sorted.map((bag) => {
-      const statusCls = bag.status === 'recovered' ? 'warn' : '';
+      const isRecording = bag.status === 'recording';
+      const statusCls = isRecording ? 'recording' : (bag.status === 'recovered' ? 'warn' : '');
       const warning = bag.status === 'recovered'
         ? '<span class="bag-warning" title="Запись была прервана аварийно. Данные частично восстановлены.">⚠</span>'
         : '';
+      const actions = isRecording
+        ? '<button data-action="stop" class="bag-stop-btn">■ Остановить запись</button>'
+        : '<button data-action="play">Play</button><button data-action="download">ZIP</button><button data-action="delete">Delete</button>';
       return `
         <article class="bag-item ${statusCls}" data-id="${bag.id}">
           <div class="bag-item-main">
@@ -41,9 +45,7 @@ class BagCatalog {
             <span>Теги: ${bag.tags || '-'}</span>
           </div>
           <div class="bag-item-actions">
-            <button data-action="play">Play</button>
-            <button data-action="download">ZIP</button>
-            <button data-action="delete">Delete</button>
+            ${actions}
           </div>
         </article>
       `;
@@ -79,6 +81,10 @@ class BagCatalog {
       if (!window.confirm('Удалить запись и файлы?')) return;
       await window.bagManager.request(`/api/bags/${id}`, { method: 'DELETE' });
       await window.bagManager.refreshCatalog();
+      return;
+    }
+    if (action === 'stop') {
+      await window.bagManager.stopRecordingFromPanel();
     }
   }
 

@@ -1,8 +1,6 @@
 class BagCatalog {
   constructor() {
     this.container = null;
-    this.sortColumn = 'start_time';
-    this.sortOrder = 'desc';
   }
 
   getContainer() {
@@ -19,8 +17,7 @@ class BagCatalog {
       root.innerHTML = '<div class="bag-empty">Записей пока нет</div>';
       return;
     }
-    const sorted = [...items].sort((a, b) => this.compare(a, b));
-    const rows = sorted.map((bag) => {
+    const rows = items.map((bag) => {
       const isRecording = bag.status === 'recording';
       const statusCls = isRecording ? 'recording' : (bag.status === 'recovered' ? 'warn' : '');
       const warning = bag.status === 'recovered'
@@ -111,15 +108,6 @@ class BagCatalog {
     return d.toLocaleString();
   }
 
-  compare(a, b) {
-    const key = this.sortColumn;
-    const av = a[key] ?? '';
-    const bv = b[key] ?? '';
-    let cmp = 0;
-    if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
-    else cmp = String(av).localeCompare(String(bv), 'ru');
-    return this.sortOrder === 'asc' ? cmp : -cmp;
-  }
 }
 
 window.bagCatalog = new BagCatalog();

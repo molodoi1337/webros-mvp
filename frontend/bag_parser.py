@@ -18,21 +18,23 @@ class BagParser:
         bag_format = "mcap" if mcap_files else "db3"
         size_bytes = sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
-        # Avoid noisy rosbag2 errors on incomplete/crashed directories.
-        # Primary: rosbag2_py (authoritative). Fallback: parse metadata.yaml
-        # directly — rosbag2_py is not guaranteed to be importable from the
-        # Flask venv on Jetson, and metadata.yaml carries the same numbers.
+        # Three sources, tried in order, because a hard kill of ros2 bag
+        # record (boat power loss) leaves no metadata.yaml and an
+        # unfinalized .mcap that rosbag2_py.get_metadata() can't read:
+        #   1. rosbag2_py.get_metadata() — works only on cleanly closed bags
+        #   2. metadata.yaml — also only present on clean shutdown
+        #   3. mcap recovery scan — walks the .mcap chunk by chunk and
+        #      reconstructs counts/timestamps from whatever survived
         metadata_path = path / "metadata.yaml"
-        info = None
-        if metadata_path.exists() and metadata_path.stat().st_size > 0:
-            info = self._try_rosbag2_info(path, bag_format)
-            # If rosbag2_py returned nothing OR zeroes (happens when it
-            # can open the bag but can't extract metadata on some Humble
-            # builds), fall back to reading metadata.yaml directly.
-            if not info or not int(info.get("duration_ns") or 0):
-                yaml_info = self._try_yaml_metadata(metadata_path)
-                if yaml_info and int(yaml_info.get("duration_ns") or 0):
-                    info = yaml_info
+        info = self._try_rosbag2_info(path, bag_format)
+        if (not info or not int(info.get("duration_ns") or 0)) and metadata_path.exists() and metadata_path.stat().st_size > 0:
+            yaml_info = self._try_yaml_metadata(metadata_path)
+            if yaml_info and int(yaml_info.get("duration_ns") or 0):
+                info = yaml_info
+        if (not info or not int(info.get("duration_ns") or 0)) and files:
+            recovered = self._try_mcap_recover(files) if bag_format == "mcap" else None
+            if recovered and (recovered.get("message_count") or recovered.get("duration_ns")):
+                info = recovered
         if info:
             info["format"] = bag_format
             info["size_bytes"] = size_bytes
@@ -84,6 +86,54 @@ class BagParser:
             "start_time": _iso_from_ns(start_ns) if start_ns > 0 else datetime.now(tz=timezone.utc).isoformat(),
             "end_time": _iso_from_ns(end_ns) if end_ns > 0 else None,
             "topics": topics,
+        }
+
+    def _try_mcap_recover(self, mcap_files: List[str]) -> Dict[str, Any] | None:
+        # Walk MCAP records directly so that even an MCAP without a
+        # finalized footer/summary (the result of SIGKILL on the
+        # recorder) yields a usable timestamp range and message count.
+        try:
+            from mcap.reader import make_reader  # type: ignore
+        except Exception:
+            return None
+        topics: Dict[str, Dict[str, Any]] = {}
+        message_count = 0
+        start_ns: int | None = None
+        end_ns: int | None = None
+        for fpath in mcap_files:
+            try:
+                with open(fpath, "rb") as f:
+                    reader = make_reader(f)
+                    for schema, channel, message in reader.iter_messages():
+                        message_count += 1
+                        ts = int(message.log_time)
+                        if start_ns is None or ts < start_ns:
+                            start_ns = ts
+                        if end_ns is None or ts > end_ns:
+                            end_ns = ts
+                        name = channel.topic
+                        msg_type = (schema.name if schema else "unknown") or "unknown"
+                        slot = topics.setdefault(
+                            name, {"topic_name": name, "message_type": msg_type, "message_count": 0, "frequency_hz": None}
+                        )
+                        slot["message_count"] += 1
+            except Exception:
+                # Per-file failure is fine — partial chunk may be torn;
+                # the records we already counted still represent real data.
+                continue
+        if message_count == 0 or start_ns is None or end_ns is None:
+            return None
+        duration_ns = max(0, int(end_ns) - int(start_ns))
+        duration_sec = duration_ns / 1_000_000_000 if duration_ns > 0 else 0.0
+        for slot in topics.values():
+            if duration_sec > 0:
+                slot["frequency_hz"] = round(slot["message_count"] / duration_sec, 3)
+        return {
+            "duration_ns": int(duration_ns),
+            "message_count": int(message_count),
+            "start_time": _iso_from_ns(int(start_ns)),
+            "end_time": _iso_from_ns(int(end_ns)),
+            "topics": list(topics.values()),
         }
 
     def _try_rosbag2_info(self, bag_dir: Path, bag_format: str) -> Dict[str, Any] | None:

@@ -4,8 +4,10 @@
     left: 50%;
     transform: translate(-50%, 50%);
     padding: 10px 20px;
-    /* На больших экранах меню компактное, на маленьких — не шире экрана */
-    width: min(480px, 94vw);
+    /* На больших экранах меню компактное, на маленьких — не шире экрана.
+       560px нужно, чтобы в табе Bag два datetime-local поля помещались
+       целиком вместе с иконкой календаря. */
+    width: min(560px, 94vw);
     background: rgba(255, 255, 255, 0.015);
     border-radius: 10px;
     backdrop-filter: blur(3px);

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 
 class BagRecordWatchdog:
-    def __init__(self, bag_dir: Path, interval_sec: int = 30):
+    def __init__(self, bag_dir: Path, interval_sec: int = 5):
         self.bag_dir = Path(bag_dir)
         self.interval = interval_sec
         self._timer: Optional[threading.Timer] = None
@@ -149,6 +149,11 @@ class BagManager:
                 str(max_bag_duration),
                 "--max-bag-size",
                 str(max_bag_size_mb * 1024 * 1024),
+                # Disable the in-memory message cache so a SIGKILL (boat
+                # power-cut) loses at most one message instead of the whole
+                # default 100 MB buffer that never reached the .mcap.
+                "--max-cache-size",
+                "0",
             ]
             if topics:
                 cmd.extend(topics)

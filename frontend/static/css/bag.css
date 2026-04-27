@@ -102,6 +102,24 @@
   color: #fff;
   border-radius: 6px;
   padding: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* Date inputs need extra horizontal room for the calendar icon — give
+   them a full-width row inside the 2-col filter grid. */
+.bag-filter-wide {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.bag-filter-wide input {
+  flex: 1 1 auto;
 }
 
 .bag-item {

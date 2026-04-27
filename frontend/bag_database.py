@@ -162,11 +162,16 @@ class BagDatabase:
         if status:
             where.append("status = ?")
             params.append(status)
+        # Compare timestamps via strftime('%s', ...) so the filter works
+        # consistently regardless of whether the row's start_time is a
+        # naive local ISO string (from datetime.now().isoformat()) or
+        # tz-aware UTC (from _iso_from_ns). String compare on raw ISO
+        # mishandles the second-precision boundary on the upper bound.
         if from_time:
-            where.append("start_time >= ?")
+            where.append("CAST(strftime('%s', start_time) AS INTEGER) >= CAST(strftime('%s', ?) AS INTEGER)")
             params.append(from_time)
         if to_time:
-            where.append("start_time <= ?")
+            where.append("CAST(strftime('%s', start_time) AS INTEGER) <= CAST(strftime('%s', ?) AS INTEGER)")
             params.append(to_time)
         if search:
             where.append("(name LIKE ? OR COALESCE(description,'') LIKE ?)")

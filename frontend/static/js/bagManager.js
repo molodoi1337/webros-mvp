@@ -42,14 +42,22 @@ class BagManagerClient {
           <option value="error">error</option>
         </select>
         <input id="bag-tags-filter" type="text" placeholder="Теги">
-        <input id="bag-from-filter" type="datetime-local">
-        <input id="bag-to-filter" type="datetime-local">
+        <label class="bag-filter-label bag-filter-wide">От
+          <input id="bag-from-filter" type="datetime-local">
+        </label>
+        <label class="bag-filter-label bag-filter-wide">До
+          <input id="bag-to-filter" type="datetime-local">
+        </label>
         <select id="bag-sort-filter">
           <option value="start_time">По дате</option>
           <option value="name">По имени</option>
           <option value="size_bytes">По размеру</option>
           <option value="message_count">По сообщениям</option>
           <option value="status">По статусу</option>
+        </select>
+        <select id="bag-order-filter">
+          <option value="desc">↓ убыв.</option>
+          <option value="asc">↑ возр.</option>
         </select>
       </div>
       <div id="bag-catalog" class="bag-catalog"></div>
@@ -76,13 +84,20 @@ class BagManagerClient {
         this.openRecordDialog();
       }
     });
-    ['bag-search', 'bag-status-filter', 'bag-tags-filter', 'bag-from-filter', 'bag-to-filter', 'bag-sort-filter'].forEach((id) => {
+    ['bag-search', 'bag-status-filter', 'bag-tags-filter', 'bag-from-filter', 'bag-to-filter', 'bag-sort-filter', 'bag-order-filter'].forEach((id) => {
       const el = panel.querySelector(`#${id}`);
       if (!el) return;
-      const ev = el.tagName === 'SELECT' ? 'change' : 'input';
-      el.addEventListener(ev, () => {
+      // datetime-local fires `change` (not always `input`) on iOS/Safari
+      // when picked via the calendar widget — listen to both.
+      const handler = () => {
         this.refreshCatalog({ keepPage: false }).catch(() => {});
-      });
+      };
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', handler);
+      } else {
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+      }
     });
   }
 
@@ -97,6 +112,7 @@ class BagManagerClient {
       from: value('bag-from-filter'),
       to: value('bag-to-filter'),
       sort: value('bag-sort-filter') || 'start_time',
+      order: value('bag-order-filter') || 'desc',
     };
   }
 
@@ -219,8 +235,8 @@ class BagManagerClient {
       if (v) params.set(k, v);
     });
     params.set('per_page', '100');
-    params.set('order', 'desc');
     if (!params.get('sort')) params.set('sort', 'start_time');
+    if (!params.get('order')) params.set('order', 'desc');
     const data = await this.request(`/api/bags?${params.toString()}`);
     this.renderStorageInfo(data.items || []);
     if (window.bagCatalog && typeof window.bagCatalog.render === 'function') {

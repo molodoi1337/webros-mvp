@@ -1,5 +1,6 @@
 import glob
 import os
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -18,14 +19,21 @@ class BagParser:
         bag_format = "mcap" if mcap_files else "db3"
         size_bytes = sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
-        # Three sources, tried in order, because a hard kill of ros2 bag
-        # record (boat power loss) leaves no metadata.yaml and an
-        # unfinalized .mcap that rosbag2_py.get_metadata() can't read:
-        #   1. rosbag2_py.get_metadata() — works only on cleanly closed bags
-        #   2. metadata.yaml — also only present on clean shutdown
-        #   3. mcap recovery scan — walks the .mcap chunk by chunk and
-        #      reconstructs counts/timestamps from whatever survived
+        # Recovery cascade for crashed recordings (boat SIGKILL):
+        #   1. If metadata.yaml is missing/empty, ask `ros2 bag reindex`
+        #      to rebuild it from the .mcap. This is by far the best
+        #      outcome — it leaves the bag fully usable by rosbag2_py
+        #      (timeline / topic messages / charts / ros2 bag play),
+        #      not just countable in the catalog.
+        #   2. rosbag2_py.get_metadata() — works once metadata.yaml is
+        #      back (either pre-existing or freshly reindexed).
+        #   3. Parse metadata.yaml directly — fallback for builds where
+        #      rosbag2_py is missing from the Flask venv.
+        #   4. mcap python NonSeekingReader — last-resort scan for
+        #      counts/timestamps if reindex couldn't be run.
         metadata_path = path / "metadata.yaml"
+        if files and (not metadata_path.exists() or metadata_path.stat().st_size == 0):
+            self._try_reindex(path, bag_format)
         info = self._try_rosbag2_info(path, bag_format)
         if (not info or not int(info.get("duration_ns") or 0)) and metadata_path.exists() and metadata_path.stat().st_size > 0:
             yaml_info = self._try_yaml_metadata(metadata_path)
@@ -50,6 +58,22 @@ class BagParser:
             "end_time": None,
             "topics": [],
         }
+
+    def _try_reindex(self, bag_dir: Path, bag_format: str) -> bool:
+        # `ros2 bag reindex` walks the storage files and writes a fresh
+        # metadata.yaml. Works on .mcap files that were never finalized
+        # (no footer/summary), which is the case after SIGKILL on the
+        # recorder. Does NOT require the `mcap` python package.
+        try:
+            proc = subprocess.run(
+                ["ros2", "bag", "reindex", str(bag_dir), "--storage", bag_format],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except Exception:
+            return False
+        return proc.returncode == 0 and (bag_dir / "metadata.yaml").exists()
 
     def _try_yaml_metadata(self, metadata_path: Path) -> Dict[str, Any] | None:
         try:

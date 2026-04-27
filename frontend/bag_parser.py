@@ -92,8 +92,13 @@ class BagParser:
         # Walk MCAP records directly so that even an MCAP without a
         # finalized footer/summary (the result of SIGKILL on the
         # recorder) yields a usable timestamp range and message count.
+        # NB: mcap.reader.make_reader picks SeekingReader for regular
+        # files, and SeekingReader requires the footer/summary section
+        # at the end of the file — which a SIGKILL'd recorder never
+        # writes. NonSeekingReader streams from byte 0 and works on
+        # unfinalized files.
         try:
-            from mcap.reader import make_reader  # type: ignore
+            from mcap.reader import NonSeekingReader  # type: ignore
         except Exception:
             return None
         topics: Dict[str, Dict[str, Any]] = {}
@@ -106,7 +111,7 @@ class BagParser:
             except Exception:
                 continue
             try:
-                reader = make_reader(f)
+                reader = NonSeekingReader(f)
                 # Iterate manually so a torn final chunk (very common
                 # after SIGKILL) doesn't discard everything we already
                 # counted before the read error.

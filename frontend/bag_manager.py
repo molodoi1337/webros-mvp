@@ -55,9 +55,14 @@ class BagRecordWatchdog:
 
 
 MCAP_STORAGE_CONFIG_YAML = """# MCAP storage plugin config (Humble rosbag2_storage_mcap).
-# Keep keys conservative: only documented options, no compression to avoid
-# failing on builds that lack the zstd plugin on Jetson.
-chunk_size: 1048576
+# IMPORTANT: keys are camelCase — `chunk_size` (snake_case) is silently
+# ignored by the YAML parser, leaving the default 4 MB chunk size, which
+# means tens of seconds of telemetry can be buffered in memory before
+# anything reaches the .mcap file. A SIGKILL within that window leaves
+# a 0-byte bag. 4 KB chunks force frequent disk writes and bound the
+# loss to a single chunk's worth of messages.
+chunkSize: 4096
+noChunkCRC: true
 """
 
 

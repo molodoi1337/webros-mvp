@@ -102,25 +102,42 @@ class BagParser:
         end_ns: int | None = None
         for fpath in mcap_files:
             try:
-                with open(fpath, "rb") as f:
-                    reader = make_reader(f)
-                    for schema, channel, message in reader.iter_messages():
-                        message_count += 1
-                        ts = int(message.log_time)
-                        if start_ns is None or ts < start_ns:
-                            start_ns = ts
-                        if end_ns is None or ts > end_ns:
-                            end_ns = ts
-                        name = channel.topic
-                        msg_type = (schema.name if schema else "unknown") or "unknown"
-                        slot = topics.setdefault(
-                            name, {"topic_name": name, "message_type": msg_type, "message_count": 0, "frequency_hz": None}
-                        )
-                        slot["message_count"] += 1
+                f = open(fpath, "rb")
             except Exception:
-                # Per-file failure is fine — partial chunk may be torn;
-                # the records we already counted still represent real data.
                 continue
+            try:
+                reader = make_reader(f)
+                # Iterate manually so a torn final chunk (very common
+                # after SIGKILL) doesn't discard everything we already
+                # counted before the read error.
+                it = reader.iter_messages()
+                while True:
+                    try:
+                        item = next(it)
+                    except StopIteration:
+                        break
+                    except Exception:
+                        break
+                    schema, channel, message = item
+                    message_count += 1
+                    ts = int(message.log_time)
+                    if start_ns is None or ts < start_ns:
+                        start_ns = ts
+                    if end_ns is None or ts > end_ns:
+                        end_ns = ts
+                    name = channel.topic
+                    msg_type = (schema.name if schema else "unknown") or "unknown"
+                    slot = topics.setdefault(
+                        name, {"topic_name": name, "message_type": msg_type, "message_count": 0, "frequency_hz": None}
+                    )
+                    slot["message_count"] += 1
+            except Exception:
+                pass
+            finally:
+                try:
+                    f.close()
+                except Exception:
+                    pass
         if message_count == 0 or start_ns is None or end_ns is None:
             return None
         duration_ns = max(0, int(end_ns) - int(start_ns))
